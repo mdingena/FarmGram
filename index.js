@@ -36,4 +36,32 @@ module.exports = class FarmGram {
 	ping() {
 		this.say( "Pong" );
 	}
+	
+	/**
+	 * Primes the FarmBot instance for a pending action.
+	 * @param {Number} chatId The chat ID of the channel used to send the command.
+	 * @return {Promise} _prime
+	 */
+	_prime( chatId ) {
+		return new Promise( ( resolve, reject ) => {
+			this._auth( chatId )
+				.then( () => resolve() )
+				.catch( error => reject( error ) )
+			;
+		});
+	}
+	
+	/**
+	 * Makes sure FarmGram is listening to an authorized chat ID.
+	 * @return {Promise} _auth
+	 */
+	_auth( chatId ) {
+		return new Promise( ( resolve, reject ) => {
+			if( this.config.telegram.chatId === chatId ) {
+				resolve( chatId );
+			} else {
+				reject( new Error( "You're not authorized to send me instructions on this channel! \u{1f644}" ) )
+			}
+		});
+	}
 }
