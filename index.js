@@ -76,6 +76,7 @@ module.exports = class FarmGram {
 		return new Promise( ( resolve, reject ) => {
 			this._auth( chatId )
 				.then( () => this._ensureToken() )
+				.then( () => this._ensureConnection() )
 				.then( () => resolve() )
 				.catch( error => reject( error ) )
 			;
@@ -124,6 +125,25 @@ module.exports = class FarmGram {
 				} else {
 					resolve( this.config.farmbot.token );
 				}
+			}
+		});
+	}
+	
+	/**
+	 * Makes sure FarmGram is connected to a FarmBot instance.
+	 * @return {Promise} _ensureConnection
+	 */
+	_ensureConnection() {
+		return new Promise( ( resolve, reject ) => {
+			if( !this._farmbot ) {
+				// No FarmBot instance found in FarmGram
+				this._farmbot = new FarmBot({ token: this.config.farmbot.token.encoded, secure: true });
+			}
+			if( this._farmbot.client && this._farmbot.client.connected ) {
+				// Connected to the FarmBot instance
+				resolve();
+			} else {
+				this._farmbot.connect().then( () => resolve(), () => reject( new Error( "I can't feel my arms \u{1F62D}" ) ) );
 			}
 		});
 	}
