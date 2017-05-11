@@ -64,6 +64,8 @@ module.exports = class FarmGram {
 			}
 		}
 	}
+	
+	/**
 	 * Primes the FarmBot instance for a pending action.
 	 * @param {Number} chatId The chat ID of the channel used to send the command.
 	 * @return {Promise} _prime
