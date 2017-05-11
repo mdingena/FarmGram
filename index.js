@@ -19,6 +19,7 @@ module.exports = class FarmGram {
 		}
 		this._telegram = new Telegram( config.telegram.token, { polling : true } );
 		this.say( "FarmGram launched! \u{1F680}" );
+		this._telegram.onText( /\/ping/i, () => this.ping() );
 	}
 	
 	/**
@@ -27,5 +28,12 @@ module.exports = class FarmGram {
 	 */
 	say( message ) {
 		this._telegram.sendMessage( this.config.telegram.chatId, message, { parse_mode : 'Markdown' } );
+	}
+	
+	/**
+	 * Responds to "Ping" with "Pong".
+	 */
+	ping() {
+		this.say( "Pong" );
 	}
 }
