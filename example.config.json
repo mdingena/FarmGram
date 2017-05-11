@@ -1,0 +1,6 @@
+{
+	"telegram" : {
+		"token" : "REPLACE_WITH_BOTFATHER_TOKEN",
+		"chatId" : 0
+	}
+}

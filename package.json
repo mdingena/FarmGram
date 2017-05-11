@@ -1,0 +1,26 @@
+{
+  "name": "farmgram",
+  "version": "0.1.0",
+  "description": "A Node.js interface between FarmBot.io and Telegram.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdingena/FarmGram.git"
+  },
+  "keywords": [
+    "telegram",
+    "farmbot"
+  ],
+  "author": "Marc Dingena",
+  "license": "MIT",
+  "dependencies": {
+	"node-telegram-bot-api": "^0.27.1"
+  },
+  "bugs": {
+    "url": "https://github.com/mdingena/FarmGram/issues"
+  },
+  "homepage": "https://github.com/mdingena/FarmGram#readme"
+}
