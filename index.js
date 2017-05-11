@@ -20,6 +20,7 @@ module.exports = class FarmGram {
 		this._telegram = new Telegram( config.telegram.token, { polling : true } );
 		this.say( "FarmGram launched! \u{1F680}" );
 		this._telegram.onText( /\/ping/i, () => this.ping() );
+		this._telegram.onText( /\/test/i, message => this.test( message.chat.id ) );
 	}
 	
 	/**
@@ -38,6 +39,15 @@ module.exports = class FarmGram {
 	}
 	
 	/**
+	 * Runs a test command through the prime chain.
+	 * @param {Number} chatId The chat ID of the channel used to send the command.
+	 */
+	test( chatId ) {
+		this._prime( chatId )
+			.then( () => this.say( "Yay!" ) )
+			.catch( error => this.say( error.message ) )
+		;
+	}
 	 * Primes the FarmBot instance for a pending action.
 	 * @param {Number} chatId The chat ID of the channel used to send the command.
 	 * @return {Promise} _prime
