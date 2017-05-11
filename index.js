@@ -19,6 +19,7 @@ module.exports = class FarmGram {
 		}
 		this._telegram = new Telegram( config.telegram.token, { polling : true } );
 		this.say( "FarmGram launched! \u{1F680}" );
+		this._telegram.onText( /\/start[\s]?(.*)/i, ( message, matches ) => this.start( message ) );
 		this._telegram.onText( /\/ping/i, () => this.ping() );
 		this._telegram.onText( /\/test/i, message => this.test( message.chat.id ) );
 	}
@@ -47,6 +48,21 @@ module.exports = class FarmGram {
 			.then( () => this.say( "Yay!" ) )
 			.catch( error => this.say( error.message ) )
 		;
+	}
+	
+	/**
+	 * Greets the user with welcome message.
+	 */
+	start( message ) {
+		if( this.config.telegram.chatId === 0 ) {
+			this._telegram.sendMessage( message.chat.id, "Hi there! \u{1f600} Your chat ID is:\n" + message.chat.id + "\n\nUse this ID in your `config.json` file.", { parse_mode : 'Markdown' } );
+		} else {
+			if( this.config.telegram.chatId === message.chat.id ) {
+				this.say( "Okay. We're all set up! \u{1f44d}\n\nUse /help for some commands." );
+			} else {
+				this._telegram.sendMessage( message.chat.id, "Hello stranger. My owner has already set me up for their FarmBot. I'm not accepting instructions from anyone else.\n\nDid you know I can listen in group chats too? Change the `chatId` in my `config.json` file to your group's ID and I'll accept commands from anyone in that group.", { parse_mode : 'Markdown' } );
+			}
+		}
 	}
 	 * Primes the FarmBot instance for a pending action.
 	 * @param {Number} chatId The chat ID of the channel used to send the command.
