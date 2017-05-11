@@ -1,5 +1,7 @@
 'use strict'; // for debugging in Meteor because it uses Node 4.x
 
+let axios = require("axios").default;
+let FarmBot = require( 'farmbot' ).Farmbot;
 let Telegram = require( 'node-telegram-bot-api' );
 let config = require( './config.json' );
 
@@ -73,6 +75,7 @@ module.exports = class FarmGram {
 	_prime( chatId ) {
 		return new Promise( ( resolve, reject ) => {
 			this._auth( chatId )
+				.then( () => this._ensureToken() )
 				.then( () => resolve() )
 				.catch( error => reject( error ) )
 			;
@@ -89,6 +92,38 @@ module.exports = class FarmGram {
 				resolve( chatId );
 			} else {
 				reject( new Error( "You're not authorized to send me instructions on this channel! \u{1f644}" ) )
+			}
+		});
+	}
+	
+	/**
+	 * Requests a new FarmBot token.
+	 * @return {Promise} _requestToken
+	 */
+	_requestToken() {
+		return axios.post( this.config.farmbot.url, this.config.farmbot.secret );
+	}
+	
+	/**
+	 * Makes sure FarmGram has a valid FarmBot token.
+	 * @return {Promise} _ensureToken
+	 */
+	_ensureToken() {
+		return new Promise( ( resolve, reject ) => {
+			if( !this.config.farmbot.token ) {
+				// No existing token found
+				this._requestToken().then( response => {
+					this.config.farmbot.token = response.data.token;
+					resolve( response.data.token );
+				}).catch( response => reject( new Error( request.statusText ) ) );
+			} else {
+				// Verify existing token
+				if( this.config.farmbot.token.unencoded.exp <= Math.floor( Date.now() / 1000 ) ) {
+					// Expired
+					this._requestToken().then( response => resolve( response.data.token ) ).catch( response => reject( new Error( request.statusText ) ) );
+				} else {
+					resolve( this.config.farmbot.token );
+				}
 			}
 		});
 	}

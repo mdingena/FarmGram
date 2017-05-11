@@ -1,4 +1,13 @@
 {
+	"farmbot" : {
+		"url" : "https://my.farmbot.io/api/tokens",
+		"secret" : {
+			"user" : {
+				"email"    : "foo@bar.com",
+				"password" : "1234567890"
+			}
+		}
+	},
 	"telegram" : {
 		"token" : "REPLACE_WITH_BOTFATHER_TOKEN",
 		"chatId" : 0
