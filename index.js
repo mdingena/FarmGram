@@ -20,11 +20,11 @@ module.exports = class FarmGram {
 			throw "You must set your Telegram bot's token in config.json";
 		}
 		this._telegram = new Telegram( config.telegram.token, { polling : true } );
+		this._onBrokerMessage = this._brokerMessage.bind( this );
 		this.say( "FarmGram launched! \u{1F680}" );
 		this._telegram.onText( /\/start(@farmgram)?[\s]?(.*)/i, ( message, matches ) => this.start( message ) );
 		this._telegram.onText( /\/ping(@farmgram)?/i, () => this.ping() );
-		this._telegram.onText( /\/test(@farmgram)?/i, message => this.test( message.chat.id ) );
-		this._telegram.onText( /\/move(@farmgram)?/i, message => this.move( message ) );
+		this._telegram.onText( /\/setup(@farmgram)?/i, message => this.setup( message.chat.id ) );
 	}
 	
 	/**
@@ -46,7 +46,7 @@ module.exports = class FarmGram {
 	 * Runs a test command through the prime chain.
 	 * @param {Number} chatId The chat ID of the channel used to send the command.
 	 */
-	test( chatId ) {
+	setup( chatId ) {
 		this._prime( chatId )
 			.then( () => this.say( "Yay!" ) )
 			.catch( error => this.say( error.message ) )
@@ -149,8 +149,40 @@ module.exports = class FarmGram {
 				// Connected to the FarmBot instance
 				resolve();
 			} else {
-				this._farmbot.connect().then( () => resolve(), () => reject( new Error( "I can't feel my arms \u{1F62D}" ) ) );
+				this._farmbot.connect()
+					.then( () => this._ensureListener() )
+					.catch( () => reject( new Error( "I can't feel my arms \u{1F62D}" ) ) )
 			}
 		});
+	}
+	
+	/**
+	 * Makes sure FarmGram is listening to FarmBot MQTT broker messages.
+	 * @return {Promise} _ensureListener
+	 */
+	_ensureListener() {
+		return new Promise( ( resolve, reject ) => {
+			this._farmbot.client.removeListener( 'message', this._onBrokerMessage );
+			this._farmbot.client.on( 'message', this._onBrokerMessage );
+			resolve();
+		});
+	}
+	
+	/**
+	 * Filter messages to send to Telegram chat.
+	 * @param {string} channel Which channel sent this message.
+	 * @param {Buffer} payload Message from MQTT broker.
+	 * @param packet Not used.
+	 */
+	_brokerMessage( channel, payload, packet ) {
+		if( channel != this._farmbot.channel.logs ) {
+			return false;
+		}
+		let message = JSON.parse( payload.toString() );
+		let types = [ 'success', 'warn', 'error' ];
+		if( types.indexOf( message.meta.type ) == -1 ) {
+			return false;
+		}
+		this.say( message.message );
 	}
 }
