@@ -121,7 +121,11 @@ module.exports = class FarmGram {
 				// Verify existing token
 				if( this.config.farmbot.token.unencoded.exp <= Math.floor( Date.now() / 1000 ) ) {
 					// Expired
-					this._requestToken().then( response => resolve( response.data.token ) ).catch( response => reject( new Error( request.statusText ) ) );
+					delete this._farmbot; // Recommended approach for expired tokens, by Rick Carlino @ https://forum.farmbot.org/t/instant-messaging-with-farmbot/1819/33
+					this._requestToken().then( response => {
+						this.config.farmbot.token = response.data.token;
+						resolve( response.data.token );
+					}).catch( response => reject( new Error( request.statusText ) ) );
 				} else {
 					resolve( this.config.farmbot.token );
 				}
