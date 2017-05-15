@@ -1,6 +1,6 @@
 'use strict'; // for debugging in Meteor because it uses Node 4.x
 
-let axios = require("axios").default;
+let Axios = require( 'axios' ).default;
 let FarmBot = require( 'farmbot' ).Farmbot;
 let Telegram = require( 'node-telegram-bot-api' );
 let config = require( './config.json' );
@@ -16,14 +16,15 @@ global.atob = require( 'atob' );
 module.exports = class FarmGram {
 	constructor() {
 		this.config = require( './config.json' );
-		if( this.config.telegram.token == 'REPLACE_WITH_BOTFATHER_TOKEN' ) { // 370108440:AAGu_3xmb1aw2W8U_F5McCdJkVbA2As8oWc
+		if( this.config.telegram.token == 'REPLACE_WITH_BOTFATHER_TOKEN' ) {
 			throw "You must set your Telegram bot's token in config.json";
 		}
 		this._telegram = new Telegram( config.telegram.token, { polling : true } );
+		this._onBrokerMessage = this._brokerMessage.bind( this );
 		this.say( "FarmGram launched! \u{1F680}" );
-		this._telegram.onText( /\/start[\s]?(.*)/i, ( message, matches ) => this.start( message ) );
-		this._telegram.onText( /\/ping/i, () => this.ping() );
-		this._telegram.onText( /\/test/i, message => this.test( message.chat.id ) );
+		this._telegram.onText( /\/start(@farmgram)?[\s]?(.*)/i, ( message, matches ) => this.start( message ) );
+		this._telegram.onText( /\/sync(@farmgram)?/i, message => this.sync( message ) );
+		this._telegram.onText( /\/ping(@farmgram)?/i, () => this.ping() );
 	}
 	
 	/**
@@ -45,9 +46,10 @@ module.exports = class FarmGram {
 	 * Runs a test command through the prime chain.
 	 * @param {Number} chatId The chat ID of the channel used to send the command.
 	 */
-	test( chatId ) {
+	sync( message ) {
+		let chatId = message.chat.id;
 		this._prime( chatId )
-			.then( () => this.say( "Yay!" ) )
+			.then( () => this._farmbot.sync() )
 			.catch( error => this.say( error.message ) )
 		;
 	}
@@ -102,7 +104,9 @@ module.exports = class FarmGram {
 	 * @return {Promise} _requestToken
 	 */
 	_requestToken() {
-		return axios.post( this.config.farmbot.url, this.config.farmbot.secret );
+		// Recommended approach for expired tokens, by Rick Carlino @ https://forum.farmbot.org/t/instant-messaging-with-farmbot/1819/33
+		delete this._farmbot;
+		return Axios.post( this.config.farmbot.url, this.config.farmbot.secret );
 	}
 	
 	/**
@@ -121,7 +125,10 @@ module.exports = class FarmGram {
 				// Verify existing token
 				if( this.config.farmbot.token.unencoded.exp <= Math.floor( Date.now() / 1000 ) ) {
 					// Expired
-					this._requestToken().then( response => resolve( response.data.token ) ).catch( response => reject( new Error( request.statusText ) ) );
+					this._requestToken().then( response => {
+						this.config.farmbot.token = response.data.token;
+						resolve( response.data.token );
+					}).catch( response => reject( new Error( request.statusText ) ) );
 				} else {
 					resolve( this.config.farmbot.token );
 				}
@@ -143,8 +150,41 @@ module.exports = class FarmGram {
 				// Connected to the FarmBot instance
 				resolve();
 			} else {
-				this._farmbot.connect().then( () => resolve(), () => reject( new Error( "I can't feel my arms \u{1F62D}" ) ) );
+				this._farmbot.connect()
+					.then( () => this._ensureListener() )
+					.then( () => resolve() )
+					.catch( () => reject( new Error( "I can't feel my arms \u{1F62D}" ) ) )
 			}
 		});
+	}
+	
+	/**
+	 * Makes sure FarmGram is listening to FarmBot MQTT broker messages.
+	 * @return {Promise} _ensureListener
+	 */
+	_ensureListener() {
+		return new Promise( ( resolve, reject ) => {
+			this._farmbot.client.removeListener( 'message', this._onBrokerMessage );
+			this._farmbot.client.on( 'message', this._onBrokerMessage );
+			resolve();
+		});
+	}
+	
+	/**
+	 * Filter messages to send to Telegram chat.
+	 * @param {string} channel Which channel sent this message.
+	 * @param {Buffer} payload Message from MQTT broker.
+	 * @param packet Not used.
+	 */
+	_brokerMessage( channel, payload, packet ) {
+		if( channel != this._farmbot.channel.logs ) {
+			return false;
+		}
+		let message = JSON.parse( payload.toString() );
+		let types = [ 'success', 'warn', 'error' ];
+		if( types.indexOf( message.meta.type ) == -1 ) {
+			return false;
+		}
+		this.say( message.message );
 	}
 }

@@ -1,6 +1,6 @@
 {
   "name": "farmgram",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A Node.js interface between FarmBot.io and Telegram.",
   "main": "index.js",
   "scripts": {
@@ -19,8 +19,8 @@
   "dependencies": {
     "atob": "^2.0.3",
     "axios": "^0.16.1",
-	"farmbot": "^3.9.3",
-	"node-telegram-bot-api": "^0.27.1"
+    "farmbot": "^3.9.3",
+    "node-telegram-bot-api": "^0.27.1"
   },
   "bugs": {
     "url": "https://github.com/mdingena/FarmGram/issues"
