@@ -23,8 +23,8 @@ module.exports = class FarmGram {
 		this._onBrokerMessage = this._brokerMessage.bind( this );
 		this.say( "FarmGram launched! \u{1F680}" );
 		this._telegram.onText( /\/start(@farmgram)?[\s]?(.*)/i, ( message, matches ) => this.start( message ) );
+		this._telegram.onText( /\/sync(@farmgram)?/i, message => this.sync( message ) );
 		this._telegram.onText( /\/ping(@farmgram)?/i, () => this.ping() );
-		this._telegram.onText( /\/setup(@farmgram)?/i, message => this.setup( message.chat.id ) );
 	}
 	
 	/**
@@ -46,9 +46,10 @@ module.exports = class FarmGram {
 	 * Runs a test command through the prime chain.
 	 * @param {Number} chatId The chat ID of the channel used to send the command.
 	 */
-	setup( chatId ) {
+	sync( message ) {
+		let chatId = message.chat.id;
 		this._prime( chatId )
-			.then( () => this.say( "Yay!" ) )
+			.then( () => this._farmbot.sync() )
 			.catch( error => this.say( error.message ) )
 		;
 	}
@@ -151,6 +152,7 @@ module.exports = class FarmGram {
 			} else {
 				this._farmbot.connect()
 					.then( () => this._ensureListener() )
+					.then( () => resolve() )
 					.catch( () => reject( new Error( "I can't feel my arms \u{1F62D}" ) ) )
 			}
 		});
