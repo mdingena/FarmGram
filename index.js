@@ -16,14 +16,15 @@ global.atob = require( 'atob' );
 module.exports = class FarmGram {
 	constructor() {
 		this.config = require( './config.json' );
-		if( this.config.telegram.token == 'REPLACE_WITH_BOTFATHER_TOKEN' ) { // 370108440:AAGu_3xmb1aw2W8U_F5McCdJkVbA2As8oWc
+		if( this.config.telegram.token == 'REPLACE_WITH_BOTFATHER_TOKEN' ) {
 			throw "You must set your Telegram bot's token in config.json";
 		}
 		this._telegram = new Telegram( config.telegram.token, { polling : true } );
 		this.say( "FarmGram launched! \u{1F680}" );
-		this._telegram.onText( /\/start[\s]?(.*)/i, ( message, matches ) => this.start( message ) );
-		this._telegram.onText( /\/ping/i, () => this.ping() );
-		this._telegram.onText( /\/test/i, message => this.test( message.chat.id ) );
+		this._telegram.onText( /\/start(@farmgram)?[\s]?(.*)/i, ( message, matches ) => this.start( message ) );
+		this._telegram.onText( /\/ping(@farmgram)?/i, () => this.ping() );
+		this._telegram.onText( /\/test(@farmgram)?/i, message => this.test( message.chat.id ) );
+		this._telegram.onText( /\/move(@farmgram)?/i, message => this.move( message ) );
 	}
 	
 	/**
