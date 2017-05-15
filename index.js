@@ -1,6 +1,6 @@
 'use strict'; // for debugging in Meteor because it uses Node 4.x
 
-let axios = require("axios").default;
+let Axios = require( 'axios' ).default;
 let FarmBot = require( 'farmbot' ).Farmbot;
 let Telegram = require( 'node-telegram-bot-api' );
 let config = require( './config.json' );
@@ -103,7 +103,9 @@ module.exports = class FarmGram {
 	 * @return {Promise} _requestToken
 	 */
 	_requestToken() {
-		return axios.post( this.config.farmbot.url, this.config.farmbot.secret );
+		// Recommended approach for expired tokens, by Rick Carlino @ https://forum.farmbot.org/t/instant-messaging-with-farmbot/1819/33
+		delete this._farmbot;
+		return Axios.post( this.config.farmbot.url, this.config.farmbot.secret );
 	}
 	
 	/**
@@ -122,7 +124,6 @@ module.exports = class FarmGram {
 				// Verify existing token
 				if( this.config.farmbot.token.unencoded.exp <= Math.floor( Date.now() / 1000 ) ) {
 					// Expired
-					delete this._farmbot; // Recommended approach for expired tokens, by Rick Carlino @ https://forum.farmbot.org/t/instant-messaging-with-farmbot/1819/33
 					this._requestToken().then( response => {
 						this.config.farmbot.token = response.data.token;
 						resolve( response.data.token );
